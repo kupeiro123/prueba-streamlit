@@ -22,34 +22,16 @@ if "excel_buffer" not in st.session_state:
 if st.button("Analizar") and url:
     with st.spinner("Analizando el anuncio..."):
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "es-ES,es;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Referer": "https://www.google.es/"
-        }
-
-        session = requests.Session()
-        session.get("https://www.idealista.com", headers=headers)
-        response = session.get(url, headers=headers)
+        # 1. Scraping con ScraperAPI
+        scraper_url = f"http://api.scraperapi.com?api_key={st.secrets['SCRAPER_API_KEY']}&url={url}&render=true"
+        response = requests.get(scraper_url, timeout=60)
         soup = BeautifulSoup(response.text, "html.parser")
 
         for tag in soup(["script", "style"]):
             tag.decompose()
         html_limpio = soup.get_text(separator="\n", strip=True)[:8000]
 
-
-        
-
-        st.text_area("HTML recibido (debug)", html_limpio[:1000])
-
-
-
-        
-
+        # Buscar foto principal
         foto_url = None
         for img in soup.find_all("img"):
             src = img.get("src", "")
@@ -57,6 +39,7 @@ if st.button("Analizar") and url:
                 foto_url = src
                 break
 
+        # 2. Groq API
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
         prompt = f"""
@@ -80,14 +63,16 @@ if st.button("Analizar") and url:
         datos = json.loads(texto)
         datos["fecha_obtencion"] = str(date.today())
 
+        # 3. Descargar foto
         foto_bytes = None
         if foto_url:
             try:
-                foto_resp = session.get(foto_url, headers=headers)
+                foto_resp = requests.get(foto_url, timeout=30)
                 foto_bytes = foto_resp.content
             except:
                 pass
 
+        # 4. Generar PDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", "B", 16)
