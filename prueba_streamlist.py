@@ -14,13 +14,27 @@ st.title("Analizador de Idealista")
 
 url = st.text_input("Pega la URL del anuncio de Idealista")
 
+if "pdf_bytes" not in st.session_state:
+    st.session_state.pdf_bytes = None
+if "excel_buffer" not in st.session_state:
+    st.session_state.excel_buffer = None
+
 if st.button("Analizar") and url:
     with st.spinner("Analizando el anuncio..."):
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Referer": "https://www.google.es/"
         }
-        response = requests.get(url, headers=headers)
+
+        session = requests.Session()
+        session.get("https://www.idealista.com", headers=headers)
+        response = session.get(url, headers=headers)
         soup = BeautifulSoup(response.text, "html.parser")
 
         for tag in soup(["script", "style"]):
@@ -60,7 +74,7 @@ if st.button("Analizar") and url:
         foto_bytes = None
         if foto_url:
             try:
-                foto_resp = requests.get(foto_url, headers=headers)
+                foto_resp = session.get(foto_url, headers=headers)
                 foto_bytes = foto_resp.content
             except:
                 pass
@@ -98,7 +112,7 @@ if st.button("Analizar") and url:
             except:
                 pass
 
-        pdf_bytes = bytes(pdf.output())
+        st.session_state.pdf_bytes = bytes(pdf.output())
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -108,14 +122,16 @@ if st.button("Analizar") and url:
         excel_buffer = io.BytesIO()
         wb.save(excel_buffer)
         excel_buffer.seek(0)
+        st.session_state.excel_buffer = excel_buffer.read()
 
         st.success("Archivos generados correctamente")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button("Descargar PDF", data=pdf_bytes,
-                file_name="inmueble.pdf", mime="application/pdf")
-        with col2:
-            st.download_button("Descargar Excel", data=excel_buffer,
-                file_name="inmueble.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+if st.session_state.pdf_bytes and st.session_state.excel_buffer:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button("Descargar PDF", data=st.session_state.pdf_bytes,
+            file_name="inmueble.pdf", mime="application/pdf")
+    with col2:
+        st.download_button("Descargar Excel", data=st.session_state.excel_buffer,
+            file_name="inmueble.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
