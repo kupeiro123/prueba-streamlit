@@ -23,7 +23,7 @@ if st.button("Analizar") and url:
     with st.spinner("Analizando el anuncio..."):
 
         # 1. Scraping con ScraperAPI
-        scraper_url = f"http://api.scraperapi.com?api_key={st.secrets['SCRAPER_API_KEY']}&url={url}&render=true"
+        scraper_url = f"http://api.scraperapi.com?api_key={st.secrets['SCRAPER_API_KEY']}&url={url}&render=true&premium=true"
         response = requests.get(scraper_url, timeout=60)
         soup = BeautifulSoup(response.text, "html.parser")
 
