@@ -41,6 +41,15 @@ if st.button("Analizar") and url:
             tag.decompose()
         html_limpio = soup.get_text(separator="\n", strip=True)[:8000]
 
+
+        
+
+        st.text_area("HTML recibido (debug)", html_limpio[:1000])
+
+
+
+        
+
         foto_url = None
         for img in soup.find_all("img"):
             src = img.get("src", "")
