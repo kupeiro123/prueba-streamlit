@@ -31,6 +31,16 @@ if st.button("Analizar") and url:
             tag.decompose()
         html_limpio = soup.get_text(separator="\n", strip=True)[:8000]
 
+
+
+
+
+        st.text_area("Debug HTML", html_limpio[:2000])
+
+
+
+        
+
         # Buscar foto principal
         foto_url = None
         for img in soup.find_all("img"):
