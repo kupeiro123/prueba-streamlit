@@ -23,8 +23,10 @@ if st.button("Analizar") and url:
     with st.spinner("Analizando el anuncio..."):
 
         # 1. Scraping con ScraperAPI
-        scraper_url = f"http://api.scraperapi.com?api_key={st.secrets['SCRAPER_API_KEY']}&url={url}&render=true&premium=true"
-        response = requests.get(scraper_url, timeout=60)
+        from zenrows import ZenRowsClient
+        client_zen = ZenRowsClient(st.secrets["ZENROWS_API_KEY"])
+        response = client_zen.get(url, params={"js_render": "true"})
+        
         soup = BeautifulSoup(response.text, "html.parser")
 
         for tag in soup(["script", "style"]):
